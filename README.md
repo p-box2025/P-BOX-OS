@@ -225,7 +225,6 @@ This project is licensed under the **MIT License**.
 
 - **GitHub**: https://github.com/p-box2025/P-BOX-OS
 - **Releases**: https://github.com/p-box2025/P-BOX-OS/releases
-- **Telegram**: https://t.me/+8d9PNOt-w6BkNzU1
 
 ---
 
