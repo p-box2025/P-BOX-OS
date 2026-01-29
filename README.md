@@ -1,63 +1,70 @@
 # P-BOX OS
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Version-1.0.0-blue.svg" alt="Version">
-  <img src="https://img.shields.io/badge/Platform-x86__64%20|%20ARM64%20|%20ARMhf-green.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/Base-Debian%2012-red.svg" alt="Base">
-  <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License">
+  <img src="https://img.shields.io/badge/Version-1.0.3-blue" alt="Version">
+  <img src="https://img.shields.io/badge/Platform-AMD64%20%7C%20ARM64%20%7C%20ARMhf-green" alt="Platform">
+  <img src="https://img.shields.io/badge/Base-Debian%2012-orange" alt="Base">
+  <img src="https://img.shields.io/badge/License-MIT-brightgreen" alt="License">
 </p>
 
 **P-BOX OS** is a lightweight, pre-configured operating system image designed for network proxy and routing management. Built on Debian 12 (Bookworm), it provides an intuitive web-based control panel for managing proxy services including **mihomo (Clash.Meta)** and **sing-box**.
 
 ---
 
-## ✨ Features
+## 🚀 Quick Install
 
-- 🌐 **Web Control Panel** - Modern, responsive web UI for easy management
-- 🚀 **Multi-Core Support** - Supports mihomo (Clash.Meta) and sing-box proxy cores
-- 🔄 **Subscription Management** - Auto-update proxy subscriptions
-- 📊 **Traffic Monitoring** - Real-time connection and traffic statistics
-- 🌍 **GeoIP & Rules** - Built-in GeoIP database and rule sets
-- 🔒 **Secure by Default** - Pre-configured firewall and SSL certificates
-- ⚡ **BBR Enabled** - TCP BBR congestion control for better performance
-- 🔧 **Easy Deployment** - Ready-to-use images for multiple platforms
+### One-Line Install (Linux/macOS)
 
----
+```bash
+curl -fsSL https://raw.githubusercontent.com/p-box2025/P-BOX-OS/main/install.sh | bash
+```
 
-## 📦 Supported Platforms
+### Manual Download
 
-### x86_64 / AMD64
-| Format | Description | Use Case |
-|--------|-------------|----------|
-| `.img.gz` | Raw disk image (compressed) | Physical machines, generic VMs |
-| `.qcow2` | QEMU Copy-On-Write | Proxmox VE, KVM, QEMU |
-| `.vmdk` | VMware Virtual Disk | VMware ESXi, Workstation, Fusion |
-| `.vdi` | VirtualBox Disk Image | Oracle VirtualBox |
-| `.vhdx` | Hyper-V Virtual Disk | Microsoft Hyper-V |
-| `.ova` | Open Virtual Appliance | VMware, VirtualBox (import) |
-| `.iso` | Live/Install ISO | ESXi, bare metal installation |
+Download from [Releases](https://github.com/p-box2025/P-BOX-OS/releases/latest):
 
-### ARM64 / AArch64
-| Device | Format | Notes |
-|--------|--------|-------|
-| Generic ARM64 | `.img.gz` | For generic ARM64 servers/VMs |
-| Raspberry Pi 4 | `.img.gz` | Tested on RPi 4B |
-| Raspberry Pi 5 | `.img.gz` | Tested on RPi 5 |
-| FriendlyElec R4S | `.img.gz` | NanoPi R4S |
-| FriendlyElec R5S | `.img.gz` | NanoPi R5S |
-| Phicomm N1 | `.img.gz` | S905D based |
-
-### ARMhf / ARM32
-| Device | Format | Notes |
-|--------|--------|-------|
-| Raspberry Pi 3 | `.img.gz` | RPi 3B/3B+ |
-| FriendlyElec R2S | `.img.gz` | NanoPi R2S |
+| Architecture | File | Platform |
+|--------------|------|----------|
+| AMD64 (x86_64) | `pbox-os-amd64-*.img.gz` | PC, Server, VM |
+| ARM64 (aarch64) | `pbox-os-arm64-*.img.gz` | RPi 4/5, R4S, R5S |
+| ARMhf (armv7) | `pbox-os-armhf-*.img.gz` | RPi 3, R2S |
 
 ---
 
-## 🚀 Quick Start
+## 💿 One-Click Deploy
 
-### Default Credentials
+After downloading, use the smart deployment script:
+
+```bash
+# Linux/macOS
+chmod +x deploy-vm.sh
+./deploy-vm.sh
+
+# Windows
+# Double-click deploy-vm.bat
+```
+
+### Supported Platforms
+
+| Platform | Version | Disk Format |
+|----------|---------|-------------|
+| **Proxmox VE** | 6.x - 9.x | raw/qcow2 |
+| **VMware ESXi** | 6.5 - 8.x | vmdk |
+| **VMware Workstation** | 14 - 17 | vmdk |
+| **VirtualBox** | 5.x - 7.2 | vdi |
+| **Hyper-V** | 2016 - 2025 | vhdx |
+
+### Default VM Settings
+
+| Setting | Default |
+|---------|---------|
+| CPU Cores | 4 |
+| Memory | 2048 MB |
+| Boot Mode | BIOS (Legacy) |
+
+---
+
+## 🔑 Default Credentials
 
 | Service | Username | Password |
 |---------|----------|----------|
@@ -66,113 +73,95 @@
 
 > ⚠️ **Security Notice**: Please change the default password after first login!
 
-### Web Panel Access
+---
 
-After booting, access the web panel at:
-```
-https://<device-ip>
-```
+## 🌐 Access
+
+After the VM boots:
+
+1. **Get IP Address** - The system automatically obtains an IP via DHCP
+2. **SSH Login** - `ssh root@<device-ip>` (password: `pbox123`)
+3. **Terminal Menu** - Type `pbox` to open the interactive management menu
+4. **Web Panel** - Open `https://<device-ip>` in your browser
 
 ---
 
-## 💿 Installation Guide
+## 📦 Manual Installation
 
-### Method 1: Write to Disk (Recommended)
+### Write to Physical Disk
 
-#### Linux / macOS
 ```bash
-# Decompress and write to disk
-gunzip -c pbox-os-*.img.gz | sudo dd of=/dev/sdX bs=4M status=progress
+# Linux/macOS
+gunzip -c pbox-os-amd64-*.img.gz | sudo dd of=/dev/sdX bs=4M status=progress
 
-# Sync and safely remove
-sync
+# Windows: Use balenaEtcher, Rufus, or Win32DiskImager
 ```
 
-#### Windows
-Use one of the following tools:
-- [balenaEtcher](https://www.balena.io/etcher/) (Recommended)
-- [Rufus](https://rufus.ie/)
-- [Win32DiskImager](https://sourceforge.net/projects/win32diskimager/)
+### Proxmox VE (Manual)
 
-### Method 2: Convert to VM Format
-
-#### Proxmox VE (PVE)
 ```bash
 # Decompress
-gunzip pbox-os-*.img.gz
+gunzip pbox-os-amd64-*.img.gz
 
-# Import to VM
-qm importdisk <VMID> pbox-os-*.img local-lvm
-
-# Or convert to qcow2 first
-qemu-img convert -f raw -O qcow2 pbox-os-*.img pbox-os.qcow2
+# Create VM and import disk
+qm create 100 --name pbox --memory 2048 --cores 4 --net0 virtio,bridge=vmbr0
+qm importdisk 100 pbox-os-amd64-*.img local-lvm --format raw
+qm set 100 --scsi0 local-lvm:vm-100-disk-0 --boot order=scsi0
+qm start 100
 ```
 
-#### VMware ESXi
+### VMware ESXi (Manual)
+
 ```bash
 # Convert to VMDK
-gunzip pbox-os-*.img.gz
-qemu-img convert -f raw -O vmdk pbox-os-*.img pbox-os.vmdk
+gunzip pbox-os-amd64-*.img.gz
+qemu-img convert -f raw -O vmdk pbox-os-amd64-*.img pbox.vmdk
 
-# Upload to ESXi datastore via web UI or SCP
-scp pbox-os.vmdk root@esxi-host:/vmfs/volumes/datastore1/
+# Upload to ESXi datastore and create VM via web UI
 ```
 
-#### VirtualBox
+### VirtualBox (Manual)
+
 ```bash
 # Convert to VDI
-gunzip pbox-os-*.img.gz
-qemu-img convert -f raw -O vdi pbox-os-*.img pbox-os.vdi
+gunzip pbox-os-amd64-*.img.gz
+VBoxManage convertfromraw pbox-os-amd64-*.img pbox.vdi --format VDI
 
-# Or use VBoxManage
-VBoxManage convertfromraw pbox-os-*.img pbox-os.vdi --format VDI
+# Create VM in VirtualBox using the VDI file
 ```
 
-#### Hyper-V
-```bash
-# Convert to VHDX
-gunzip pbox-os-*.img.gz
-qemu-img convert -f raw -O vhdx pbox-os-*.img pbox-os.vhdx
+### Hyper-V (Manual)
+
+```powershell
+# Convert to VHDX (requires qemu-img)
+qemu-img convert -f raw -O vhdx pbox-os-amd64-*.img pbox.vhdx
+
+# Create VM
+New-VM -Name "pbox" -MemoryStartupBytes 2GB -Generation 1 -VHDPath "pbox.vhdx"
+Set-VMProcessor -VMName "pbox" -Count 4
+Start-VM -Name "pbox"
 ```
 
-### Method 3: Device-Specific Instructions
+### Raspberry Pi / ARM Devices
 
-#### Raspberry Pi 3/4/5
-1. Download the appropriate `.img.gz` file
-2. Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) or balenaEtcher
+1. Download the appropriate `.img.gz` for your device
+2. Use [Raspberry Pi Imager](https://www.raspberrypi.com/software/) or [balenaEtcher](https://www.balena.io/etcher/)
 3. Write to SD card (16GB+ recommended)
 4. Insert SD card and power on
-
-#### FriendlyElec R2S/R4S/R5S
-1. Download the appropriate `.img.gz` file
-2. Write to TF/SD card using balenaEtcher
-3. Insert card and power on
-4. Connect via Ethernet
-
-#### Phicomm N1
-1. First, boot into Armbian from USB
-2. Write P-BOX image to USB drive
-3. Use `armbian-install` to flash to eMMC (optional)
+5. Connect via Ethernet
 
 ---
 
-## 🔧 Post-Installation
+## ✨ Features
 
-### 1. Change Default Password
-```bash
-passwd root
-```
-
-### 2. Configure Network
-Edit `/etc/network/interfaces` or use the web panel.
-
-### 3. Access Web Panel
-Open `https://<device-ip>` in your browser.
-
-### 4. Import Subscription
-1. Go to "Subscriptions" in web panel
-2. Add your proxy subscription URL
-3. Click "Update" to fetch nodes
+- 🌐 **Web Control Panel** - Modern, responsive web UI
+- 🚀 **Multi-Core Support** - mihomo (Clash.Meta) and sing-box
+- 🔄 **Subscription Management** - Auto-update proxy subscriptions
+- 📊 **Traffic Monitoring** - Real-time connection statistics
+- 🌍 **GeoIP & Rules** - Built-in GeoIP database and rule sets
+- 🔒 **Secure by Default** - Pre-configured firewall and SSL
+- ⚡ **BBR Enabled** - TCP BBR congestion control
+- 🔧 **Easy Deployment** - One-click deployment scripts
 
 ---
 
@@ -180,45 +169,33 @@ Open `https://<device-ip>` in your browser.
 
 ```
 /opt/pbox/
-├── bin/                 # Proxy core binaries (mihomo, sing-box)
-├── configs/             # Configuration files
-├── data/                # Runtime data and logs
-├── geoip/               # GeoIP databases
-├── rulesets/            # Proxy rule sets
-└── web/                 # Web panel files
-
-/etc/pbox/
-└── config.json          # Main configuration
+├── bin/           # Proxy core binaries
+├── configs/       # Configuration files
+├── data/          # Runtime data and logs
+├── geoip/         # GeoIP databases
+├── rulesets/      # Proxy rule sets
+└── web/           # Web panel files
 ```
-
----
-
-## 🔐 Security Recommendations
-
-1. **Change default password immediately**
-2. **Enable firewall rules** for your network
-3. **Use HTTPS** for web panel access
-4. **Regular updates** - Keep the system updated
-5. **Backup configurations** before major changes
 
 ---
 
 ## ❓ Troubleshooting
 
 ### Cannot access web panel
+
 ```bash
-# Check if services are running
+# Check services
 systemctl status pbox
 systemctl status nginx
 
 # Restart services
-systemctl restart pbox
-systemctl restart nginx
+systemctl restart pbox nginx
 ```
 
 ### Network not working
+
 ```bash
-# Check network configuration
+# Check network
 ip addr
 ip route
 
@@ -226,42 +203,30 @@ ip route
 systemctl restart networking
 ```
 
-### Proxy not working
+### Check logs
+
 ```bash
-# Check proxy core logs
+# View P-BOX logs
 journalctl -u pbox -f
 
-# Test configuration
-/opt/pbox/bin/mihomo -t -f /opt/pbox/configs/config.yaml
+# View system logs
+dmesg | tail -50
 ```
-
----
-
-## 📄 Changelog
-
-### v1.0.0 (2026-01-28)
-- Initial release
-- Support for x86_64, ARM64, ARMhf architectures
-- Web control panel
-- mihomo and sing-box support
-- GeoIP and rule sets included
 
 ---
 
 ## 📜 License
 
-This project is licensed under the MIT License.
+This project is licensed under the **MIT License**.
 
 ---
 
 ## 🔗 Links
 
-- [GitHub Repository](https://github.com/pbox-project/pbox-os)
-- [Documentation](https://docs.pbox.dev)
-- [Telegram Group](https://t.me/pbox2026)
+- **GitHub**: https://github.com/p-box2025/P-BOX-OS
+- **Releases**: https://github.com/p-box2025/P-BOX-OS/releases
+- **Telegram**: https://t.me/+8d9PNOt-w6BkNzU1
 
 ---
 
-<p align="center">
-  Made with ❤️ by P-BOX Team
-</p>
+<p align="center">Made with ❤️ by P-BOX Team</p>
