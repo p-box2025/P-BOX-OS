@@ -271,10 +271,27 @@ deploy_pve() {
     scp_cmd "$TEMP_IMG" "${SSH_USER}@${HOST_IP}:/tmp/pbox-os.img"
     rm -f "$TEMP_IMG"
     
-    # 在 PVE 上创建 VM
+    # 在 PVE 上创建 VM (兼容 PVE 6.x-9.x)
     log_info "创建虚拟机..."
-    ssh_cmd bash << EOF
+    ssh_cmd "bash -s" "$VM_ID" "$VM_NAME" "$VM_MEMORY" "$VM_CORES" "$BIOS_TYPE" "$STORAGE" << 'PVECREATE'
 set -e
+VM_ID="$1"
+VM_NAME="$2"
+VM_MEMORY="$3"
+VM_CORES="$4"
+BIOS_TYPE="$5"
+STORAGE="$6"
+
+# 检测 PVE 版本 (支持 6.x-9.x)
+PVE_VER=$(pveversion 2>/dev/null | grep -oE 'pve-manager/[0-9]+' | cut -d'/' -f2 || echo "8")
+echo "PVE 版本: $PVE_VER"
+
+# 选择 SCSI 控制器
+if [[ "$PVE_VER" -ge 7 ]]; then
+    SCSI_HW="virtio-scsi-single"
+else
+    SCSI_HW="virtio-scsi-pci"
+fi
 
 # 删除已存在的 VM（静默）
 qm destroy $VM_ID --purge 2>/dev/null || true
@@ -282,19 +299,24 @@ sleep 1
 
 # 创建 VM
 if [[ "$BIOS_TYPE" == "ovmf" ]]; then
-    qm create $VM_ID --name "$VM_NAME" --memory $VM_MEMORY --cores $VM_CORES \\
-        --net0 virtio,bridge=vmbr0 \\
-        --bios ovmf \\
-        --machine q35 \\
+    qm create $VM_ID --name "$VM_NAME" --memory $VM_MEMORY --cores $VM_CORES \
+        --net0 virtio,bridge=vmbr0 \
+        --bios ovmf \
+        --machine q35 \
         --ostype l26
     
     # 创建 EFI 磁盘
     qm set $VM_ID --efidisk0 ${STORAGE}:1,efitype=4m,pre-enrolled-keys=0
 else
-    qm create $VM_ID --name "$VM_NAME" --memory $VM_MEMORY --cores $VM_CORES \\
-        --net0 virtio,bridge=vmbr0 \\
-        --bios seabios \\
+    qm create $VM_ID --name "$VM_NAME" --memory $VM_MEMORY --cores $VM_CORES \
+        --net0 virtio,bridge=vmbr0 \
+        --bios seabios \
         --ostype l26
+fi
+
+# PVE 7+/8+/9+ 支持 q35 芯片组
+if [[ "$PVE_VER" -ge 7 ]] && [[ "$BIOS_TYPE" != "ovmf" ]]; then
+    qm set $VM_ID --machine q35 2>/dev/null || true
 fi
 
 # 导入磁盘
@@ -302,10 +324,15 @@ echo "导入磁盘..."
 qm importdisk $VM_ID /tmp/pbox-os.img $STORAGE --format raw
 
 # 获取导入的磁盘名称并挂载
-DISK_NAME=\$(qm config $VM_ID | grep "unused0" | cut -d: -f2 | tr -d ' ')
-if [[ -n "\$DISK_NAME" ]]; then
-    qm set $VM_ID --scsi0 \$DISK_NAME
-    qm set $VM_ID --scsihw virtio-scsi-pci
+DISK_NAME=$(qm config $VM_ID | grep "unused0" | cut -d: -f2 | tr -d ' ')
+if [[ -n "$DISK_NAME" ]]; then
+    # PVE 7+ 支持 iothread
+    if [[ "$PVE_VER" -ge 7 ]]; then
+        qm set $VM_ID --scsi0 ${DISK_NAME},iothread=1
+    else
+        qm set $VM_ID --scsi0 ${DISK_NAME}
+    fi
+    qm set $VM_ID --scsihw $SCSI_HW
     qm set $VM_ID --boot order=scsi0
 fi
 
@@ -315,8 +342,8 @@ qm set $VM_ID --agent enabled=1
 # 清理临时文件
 rm -f /tmp/pbox-os.img
 
-echo "虚拟机创建完成"
-EOF
+echo "虚拟机创建完成 (PVE $PVE_VER)"
+PVECREATE
 
     # 启动 VM
     log_info "启动虚拟机..."
@@ -328,8 +355,21 @@ EOF
     sleep 30
     
     # 尝试获取 IP 地址（需要 qemu-guest-agent）
+    # 兼容 PVE 6.x-9.x: qm guest / qm agent / qm guest cmd
     local VM_IP=""
-    VM_IP=$(ssh_cmd "qm agent $VM_ID network-get-interfaces 2>/dev/null | grep -oE '\"ip-address\"[[:space:]]*:[[:space:]]*\"[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+\"' | grep -v '127.0.0.1' | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'" 2>/dev/null || echo "")
+    VM_IP=$(ssh_cmd "bash -s" "$VM_ID" << 'GETIP'
+VMID="$1"
+result=$(qm guest "$VMID" network-get-interfaces 2>/dev/null) || \
+result=$(qm agent "$VMID" network-get-interfaces 2>/dev/null) || \
+result=$(qm guest cmd "$VMID" network-get-interfaces 2>/dev/null) || true
+if [[ -n "$result" ]]; then
+    echo "$result" | tr ',' '\n' | grep '"ip-address"' | grep -v 'ip-address-type' | \
+        sed 's/.*"ip-address"[[:space:]]*:[[:space:]]*"\([0-9.]*\)".*/\1/' | \
+        grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' | grep -v '^127\.' | head -1
+fi
+GETIP
+    ) 2>/dev/null || echo ""
+    VM_IP=$(echo "$VM_IP" | tr -d '[:space:]')
     
     echo ""
     if [[ -n "$VM_IP" ]]; then
